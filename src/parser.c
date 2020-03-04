@@ -202,6 +202,7 @@ convolutional_layer parse_convolutional(list *options, size_params params)
     if (cbn) batch_normalize = 2;
     int binary = option_find_int_quiet(options, "binary", 0);
     int xnor = option_find_int_quiet(options, "xnor", 0);
+    int ternary = option_find_int_quiet(options, "ternary", 0);
     int use_bin_output = option_find_int_quiet(options, "bin_output", 0);
     int sway = option_find_int_quiet(options, "sway", 0);
     int rotate = option_find_int_quiet(options, "rotate", 0);
