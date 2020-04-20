@@ -527,8 +527,11 @@ void fill_truth_smooth(char *path, char **labels, int k, float *truth, float lab
     int i;
     memset(truth, 0, k * sizeof(float));
     int count = 0;
+    char long_labels[1024];
     for (i = 0; i < k; ++i) {
-        if (strstr(path, labels[i])) {
+        sprintf(long_labels,"_%s.",labels[i]);
+        if (strstr(path, long_labels)) {
+        //if (strstr(path, labels[i])) {
             truth[i] = (1 - label_smooth_eps);
             ++count;
         }
