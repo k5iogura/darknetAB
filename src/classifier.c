@@ -139,7 +139,7 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
         train = buffer;
         load_thread = load_data(args);
 
-        printf("Loaded: %lf seconds\n", sec(clock()-time));
+        //printf("Loaded: %lf seconds\n", sec(clock()-time));
         time=clock();
 
         float loss = 0;
@@ -753,7 +753,8 @@ void try_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filena
         float *predictions = network_predict(net, X);
 
         layer l = net.layers[layer_num];
-        for(int i = 0; i < l.c; ++i){
+        int i;
+        for(i = 0; i < l.c; ++i){
             if(l.rolling_mean) printf("%f %f %f\n", l.rolling_mean[i], l.rolling_variance[i], l.scales[i]);
         }
 #ifdef GPU
