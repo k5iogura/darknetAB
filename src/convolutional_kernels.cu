@@ -173,234 +173,57 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network_state state)
 
     if(l.xnor){
         if (!l.align_bit_weights_gpu || state.train) {
-            //binarize_weights_gpu(l.weights_gpu, l.n, (l.c / l.groups)*l.size*l.size, l.binary_weights_gpu);
-
             fast_binarize_weights_gpu(l.weights_gpu, l.n, (l.c / l.groups)*l.size*l.size, l.binary_weights_gpu, l.mean_arr_gpu);
         }
 
         if (l.align_bit_weights_gpu && !state.train && l.c >= 32 && l.stride_x == l.stride_y)
         {
-            //return;
-            //cudaError_t status = cudaSuccess;
-            //int input_size = l.c*l.h*l.w*l.batch;
-
             int m = l.n / l.groups;
             int k = l.size*l.size*l.c / l.groups;
             int n = l.out_w*l.out_h;
-            //float * a = l.weights_gpu;
-
-            // int i, j;
-            // for(i = 0; i < l.batch; ++i){
-            // for (j = 0; j < l.groups; ++j) {
 
             int ldb_align = l.lda_align;
             size_t new_ldb = k + (ldb_align - k%ldb_align); // (k / 8 + 1) * 8;
-            //size_t t_intput_size = new_ldb * n;
-            //size_t t_bit_input_size = t_intput_size / 8;// +1;
 
             if (l.c % 32 == 0)
             {
-                //printf("\n\n l.index = %d, l.w = %d, l.c = %d, l.n = %d, l.stride = %d, l.pad = %d - new XNOR \n", l.index, l.w, l.c, l.n, l.stride, l.pad);
-                //printf("l.align_workspace_size = %d, (l.c * l.w * l.h)  = %d \n", l.align_workspace_size, (l.c * l.w * l.h));
-
-                //float *intput_cpu = (float *)calloc(l.inputs, sizeof(float));
-                // state.input
-                //cudaMemcpy(intput_cpu, state.input, l.inputs * sizeof(float), cudaMemcpyDefault);
-
                 int ldb_align = l.lda_align;
                 size_t new_ldb = k + (ldb_align - k%ldb_align); // (k / 8 + 1) * 8;
-                //size_t t_intput_size = new_ldb * l.bit_align;// n;
-                //size_t t_bit_input_size = t_intput_size / 8;// +1;
 
                 const int new_c = l.c / 32;
 
-                //float *re_packed_input = (float *)calloc(l.c * l.w * l.h, sizeof(float));
-                //uint32_t *bin_re_packed_input = (uint32_t *)calloc(new_c * l.w * l.h + 1, sizeof(uint32_t));
-
-                // float32x4 by channel (as in cuDNN)
-                //repack_input(intput_cpu, re_packed_input, l.w, l.h, l.c);
-
-
-                // 32 x floats -> 1 x uint32_t
-                //float_to_bit(re_packed_input, (uint8_t *)bin_re_packed_input, l.c * l.w * l.h);
-
-                //cudaDeviceSynchronize();
-                //start_timer();
-
                 repack_input_gpu_bin(state.input, (uint32_t *)l.align_workspace_gpu, l.w, l.h, l.c);
 
-                //repack_input_gpu(state.input, state.workspace, l.w, l.h, l.c);
-
-                // 32 x floats -> 1 x uint32_t
-                //float_to_bit_gpu(state.workspace, (unsigned char *)l.align_workspace_gpu, l.c * l.w * l.h);// l.align_workspace_size);
-
-                //cudaDeviceSynchronize();
-                //stop_timer_and_show_name("repack_input_gpu + float_to_bit_gpu");
-
-                //free(re_packed_input);
-
-                // slow - convolution the packed inputs and weights: float x 32 by channel (as in cuDNN)
-                //convolution_repacked((uint32_t *)bin_re_packed_input, (uint32_t *)l.align_bit_weights, l.output,
-                //    l.w, l.h, l.c, l.n, l.size, l.pad, l.new_lda, l.mean_arr);
-
-                // // then exit from if()
-
-                //float *b = state.workspace;
-                //float *b = (float *)calloc(100 * 1024 * 1024, sizeof(float));
-                //float *c = l.output;
-                //memset(c, 0, l.outputs * sizeof(float));
-
-
-                //im2col_cpu_custom((float *)bin_re_packed_input, new_c, l.h, l.w, l.size, l.stride, l.pad, b);
-
-                //cudaMemcpy(l.align_workspace_gpu, bin_re_packed_input, (new_c * l.w * l.h + 1) * sizeof(uint32_t), cudaMemcpyDefault);
-
-                //start_timer();
                 im2col_ongpu(l.align_workspace_gpu, new_c, l.h, l.w, l.size, l.stride, l.pad, state.workspace);
-                //cudaDeviceSynchronize();
-                //stop_timer_and_show_name("im2col_ongpu");
-
-                //free(bin_re_packed_input);
 
                 int new_k = l.size*l.size*l.c / 32;
 
-                // good for (l.c == 64)
-                //gemm_nn_bin_32bit_packed(m, n, new_k, 1,
-                //    l.align_bit_weights, l.new_lda/32,
-                //    b, n,
-                //    c, n, l.mean_arr);
-
-                // // then exit from if()
-
-
-                //size_t new_ldb = k + (ldb_align - k%ldb_align); // (k / 8 + 1) * 8;
-                //size_t t_intput_size = new_ldb * l.bit_align;// n;
-                //size_t t_bit_input_size = t_intput_size / 8;// +1;
-
-                //char *t_bit_input = (char *)calloc(t_bit_input_size, sizeof(char));
-                //transpose_uint32((uint32_t *)b, (uint32_t *)t_bit_input, new_k, n, n, new_ldb);
-                //cudaMemcpy(l.transposed_align_workspace_gpu, t_bit_input, t_bit_input_size * sizeof(char), cudaMemcpyDefault);
-
-                //cudaMemcpy(state.workspace, b, t_bit_input_size * sizeof(char), cudaMemcpyDefault);
-                //printf("\n n = %d, n % 32 = %d, new_ldb = %d, new_ldb % 32 = %d \n", n, n % 32, new_ldb, new_ldb % 32);
-
-                //start_timer();
                 transpose_uint32_gpu((uint32_t *)state.workspace, (uint32_t *)l.transposed_align_workspace_gpu, new_k, n, n, new_ldb);
-                //cudaDeviceSynchronize();
-                //stop_timer_and_show_name("transpose_uint32_gpu");
-
-                //cudaDeviceSynchronize();
-                //stop_timer_and_show_name("repack_input_gpu_bin + im2col_ongpu + transpose_uint32_gpu_2");
-
-                //start_timer();
                 gemm_nn_custom_bin_mean_transposed_gpu(m, n, k,
                     (unsigned char *)l.align_bit_weights_gpu, new_ldb, (unsigned char *)l.transposed_align_workspace_gpu,
                     new_ldb, l.output_gpu, n, l.mean_arr_gpu, l.biases_gpu, l.activation == LEAKY,
                     l.bin_conv_shortcut_in_gpu, l.bin_conv_shortcut_out_gpu);
-                //cudaDeviceSynchronize();
-                //stop_timer_and_show_name("gemm_nn_custom_bin_mean_transposed_gpu");
-
-
-                // the main GEMM function
-                //gemm_nn_custom_bin_mean_transposed(m, n, k, 1, (uint8_t *)l.align_bit_weights, new_ldb, (uint8_t *)t_bit_input, new_ldb, c, n, l.mean_arr);
-
-                //add_bias(l.output, l.biases, l.batch, l.n, l.out_h*l.out_w);
-
-                //cudaMemcpy(l.output_gpu, l.output, l.outputs * sizeof(float), cudaMemcpyDefault);
-
-
-                // // alternative GEMM
-                //gemm_nn_bin_transposed_32bit_packed(m, n, new_k, 1,
-                //    l.align_bit_weights, l.new_lda/32,
-                //    t_bit_input, new_ldb / 32,
-                //    c, n, l.mean_arr);
-
-                //free(t_bit_input);
-
-                //free(b);
             }
             else
             {
-                //printf("\n\n l.index = %d, l.w = %d, l.c = %d, l.n = %d, l.stride = %d, l.pad = %d - old XNOR \n", l.index, l.w, l.c, l.n, l.stride, l.pad);
-                //cudaDeviceSynchronize();
-
                 int i = 0;
-                /*
-                // if (l.stride == 1 && l.c >= 256 && l.size > 1)
-                if (l.stride == 1 && l.c >= 1024 && l.size > 1 && 0)// && l.w >= 13) // disabled
                 {
-                    // stride=1 only
-                    //start_timer();
-                    im2col_align_bin_ongpu(state.input + i*l.c*l.h*l.w, l.c, l.h, l.w, l.size, l.stride, l.pad, state.workspace, l.bit_align);
-                    //cudaDeviceSynchronize();
-                    //stop_timer_and_show_name("im2col_align_bin_ongpu");
-                }
-                else*/
-                {
-                    //start_timer();
                     im2col_align_ongpu(state.input + i*l.c*l.h*l.w, l.c, l.h, l.w, l.size, l.stride, l.pad, l.align_workspace_gpu, l.bit_align);
-                    //cudaDeviceSynchronize();
-                    //stop_timer_and_show_name("im2col_align_ongpu");
-                    //getchar();
-
-                    // should be optimized
-                    //start_timer();
                     float_to_bit_gpu(l.align_workspace_gpu, (unsigned char *)state.workspace, l.align_workspace_size);
-                    //cudaDeviceSynchronize();
-                    //stop_timer_and_show_name("float_to_bit_gpu");
                 }
-                //start_timer();
                 transpose_bin_gpu((unsigned char *)state.workspace, (unsigned char *)l.transposed_align_workspace_gpu, k, n, l.bit_align, new_ldb, 8);
-                //cudaDeviceSynchronize();
-                //stop_timer_and_show_name("transpose_bin_gpu");
-
-                //cudaDeviceSynchronize();
-                //stop_timer_and_show_name("im2col_align_ongpu + float_to_bit_gpu + transpose_bin_gpu");
-
-                // should be optimized
-                //if(0) {//if (k > 1000) {    // sequentially input-shared - BAD
-                //    gemm_nn_custom_bin_mean_transposed_sequentially_gpu(m, n, k,
-                //        (unsigned char *)l.align_bit_weights_gpu, new_ldb, (unsigned char *)l.transposed_align_workspace_gpu, new_ldb, l.output_gpu, n, l.mean_arr_gpu);
-                //}
-                //else {  // coalescing & weights-shared-memory - GOOD
-                    //start_timer();
                     gemm_nn_custom_bin_mean_transposed_gpu(m, n, k,
                         (unsigned char *)l.align_bit_weights_gpu, new_ldb, (unsigned char *)l.transposed_align_workspace_gpu,
                         new_ldb, l.output_gpu, n, l.mean_arr_gpu, l.biases_gpu, l.activation == LEAKY,
                         l.bin_conv_shortcut_in_gpu, l.bin_conv_shortcut_out_gpu);
-                    //cudaDeviceSynchronize();
-                    //stop_timer_and_show_name("gemm_nn_custom_bin_mean_transposed_gpu");
-                //}
-                //cudaDeviceSynchronize();
-                //check_error(status);
-                //getchar();
             }
 
-
-            /*
-            {
-                float_to_bit_gpu(state.input, (unsigned char *)l.align_workspace_gpu, input_size);
-                convolve_bin_gpu(l.align_workspace_gpu, (float *)l.align_bit_weights_gpu, l.output_gpu, l.w, l.h, l.c, l.n, l.size, l.pad, l.new_lda, l.mean_arr_gpu);
-
-                //convolve_gpu(state.input, l.weights_gpu, l.output_gpu, l.w, l.h, l.c, l.n, l.size, l.pad);
-
-                //cudaDeviceSynchronize();
-                //check_error(status);
-
-                add_bias_gpu(l.output_gpu, l.biases_gpu, l.batch, l.n, l.out_w*l.out_h);
-            }
-            */
-
-            //add_bias_gpu(l.output_gpu, l.biases_gpu, l.batch, l.n, l.out_w*l.out_h);
             if (l.activation == SWISH) activate_array_swish_ongpu(l.output_gpu, l.outputs*l.batch, l.activation_input_gpu, l.output_gpu);
             else if (l.activation == MISH) activate_array_mish_ongpu(l.output_gpu, l.outputs*l.batch, l.activation_input_gpu, l.output_gpu);
             else if (l.activation == NORM_CHAN) activate_array_normalize_channels_ongpu(l.output_gpu, l.outputs*l.batch, l.batch, l.out_c, l.out_w*l.out_h, l.output_gpu);
             else if (l.activation == NORM_CHAN_SOFTMAX) activate_array_normalize_channels_softmax_ongpu(l.output_gpu, l.outputs*l.batch, l.batch, l.out_c, l.out_w*l.out_h, l.output_gpu, 0);
             else if (l.activation == NORM_CHAN_SOFTMAX_MAXVAL) activate_array_normalize_channels_softmax_ongpu(l.output_gpu, l.outputs*l.batch, l.batch, l.out_c, l.out_w*l.out_h, l.output_gpu, 1);
             else if (l.activation != LINEAR && l.activation != LEAKY) activate_array_ongpu(l.output_gpu, l.outputs*l.batch, l.activation);
-            //if(l.activation != LINEAR && l.activation != LEAKY) activate_array_ongpu(l.output_gpu, l.outputs*l.batch, l.activation);
-            //if (l.binary || l.xnor) swap_binary(&l);
-            //cudaDeviceSynchronize();
             return;
         }
     }
@@ -411,31 +234,17 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network_state state)
         state.input = l.binary_input_gpu;
     }
 
-    //fill_ongpu(l.outputs*l.batch, 0, l.output_gpu, 1);
-
 #ifdef CUDNN
-    //float one = 1;    // alpha[0], beta[0] is float for HALF and FLOAT
     float alpha = 1, beta = 0;
 
-//#ifdef CUDNN_HALF
-    //if (state.use_mixed_precision) {
     int iteration_num = (*state.net.seen) / (state.net.batch*state.net.subdivisions);
     if (state.index != 0 && state.net.cudnn_half && !l.xnor && (!state.train || iteration_num > 3*state.net.burn_in) &&
         (l.c / l.groups) % 8 == 0 && l.n % 8 == 0 && !state.train && l.groups <= 1 && l.size > 1)
     {
-        //printf("\n CUDNN_HALF!!! state.index = %d \n", state.index);
-
-        // Note: For improved performance it is advised to use beta[0] = 0.0.
-        // For Tensor Core: cudnnSetConvolutionMathType() where cudnnMathType_t mathType = CUDNN_TENSOR_OP_MATH;
-        // 1. or CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM and use CUDNN_DATA_HALF
-        // 2. or CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED
-        // More: http://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#tensor_ops
-
         const size_t input16_size = l.batch*l.c*l.w*l.h;
         const size_t output16_size = l.batch*l.out_c*l.out_h*l.out_w;
 
         if (*state.net.max_input16_size < input16_size) {
-            //printf("\n input16_size: cur = %zu \t max = %zu \n", input16_size, *state.net.max_input16_size);
             *state.net.max_input16_size = input16_size;
             if (*state.net.input16_gpu) cuda_free(*state.net.input16_gpu);
             assert(*state.net.max_input16_size > 0);
@@ -454,7 +263,6 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network_state state)
         assert(input16_size > 0);
         cuda_convert_f32_to_f16(state.input, input16_size, input16);
 
-        //fill_ongpu(output16_size / 2, 0, (float *)output16, 1);
         CHECK_CUDNN(cudnnConvolutionForward(cudnn_handle(),
             &alpha,
             l.srcTensorDesc16,
@@ -475,12 +283,8 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network_state state)
             if (state.train) // Training
             {
                 simple_copy_ongpu(l.outputs*l.batch / 2, output16, l.x_gpu);
-                //copy_ongpu(l.outputs*l.batch / 2, output16, 1, l.x_gpu, 1);
-                //cudaMemcpyAsync(l.x_gpu, output16, l.outputs*l.batch*sizeof(half), cudaMemcpyDefault, get_cuda_stream());
                 float one = 1.0f;
                 float zero = 0.0f;
-                // Batch-normalization can still take FP16 inputs and outputs, saving half the bandwidth
-                // compared to FP32, it's just that the statistics and value adjustment should be done in FP32.
                 CHECK_CUDNN(cudnnBatchNormalizationForwardTraining(cudnn_handle(),
                     CUDNN_BATCHNORM_SPATIAL,
                     &one,
@@ -500,7 +304,6 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network_state state)
                     l.variance_gpu));    // output (should be FP32) - optional cache to speedup cudnnBatchNormalizationBackward()
 
                 cuda_convert_f16_to_f32(output16, output16_size, l.output_gpu);
-                //forward_batchnorm_layer_gpu(l, state);
             }
             else // Detection
             {
@@ -517,17 +320,6 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network_state state)
         }
     }
     else {
-
-        //#else
-        /*
-        int input_nan_inf = is_nan_or_inf(state.input, l.inputs * l.batch);
-        printf("\n is_nan_or_inf(state.input) = %d \n", input_nan_inf);
-        if (input_nan_inf) getchar();
-
-        int weights_nan_inf = is_nan_or_inf(l.weights_gpu, l.nweights);
-        printf("\n is_nan_or_inf(l.weights_gpu) = %d \n", weights_nan_inf);
-        if (weights_nan_inf) getchar();
-        */
 
         CHECK_CUDNN(cudnnConvolutionForward(cudnn_handle(),
             &alpha, //&one,
@@ -656,13 +448,6 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
     if (!l.batch_normalize)
         backward_bias_gpu(l.bias_updates_gpu, l.delta_gpu, l.batch, l.n, l.out_w*l.out_h);
 
-//#ifndef CUDNN_HALF
-    //if(l.batch_normalize){
-    //    backward_batchnorm_layer_gpu(l, state);
-    //} else {
-    //    //backward_bias_gpu(l.bias_updates_gpu, l.delta_gpu, l.batch, l.n, l.out_w*l.out_h);
-    //}
-//#endif // no CUDNN_HALF
     float *original_input = state.input;
 
     if(l.xnor) state.input = l.binary_input_gpu;
@@ -670,7 +455,6 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
     float one = 1.f;
     float alpha = 1, beta = 0;
 
-//#ifdef CUDNN_HALF
     int iteration_num = (*state.net.seen) / (state.net.batch*state.net.subdivisions);
     if (state.index != 0 && state.net.cudnn_half && !l.xnor && (!state.train || iteration_num > 3*state.net.burn_in) &&
         (l.c / l.groups) % 8 == 0 && l.n % 8 == 0 && !state.train && l.groups <= 1 && l.size > 1)
@@ -700,10 +484,6 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
         cuda_convert_f32_to_f16(l.delta_gpu, delta16_size, delta16);
 
         if (l.batch_normalize) {
-            //if (!state.train) {
-            //    l.mean_gpu = l.rolling_mean_gpu;
-            //    l.variance_gpu = l.rolling_variance_gpu;
-            //}
             float one = 1.0f;
             float zero = 0.0f;
             CHECK_CUDNN(cudnnBatchNormalizationBackward(cudnn_handle(),
@@ -727,20 +507,11 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
                 l.variance_gpu));        // input (should be FP32)
 
             simple_copy_ongpu(l.outputs*l.batch / 2, l.x_norm_gpu, delta16);
-            //copy_ongpu(l.outputs*l.batch / 2, l.x_norm_gpu, 1, delta16, 1);
-            //cudaMemcpyAsync(delta16, l.x_norm_gpu, l.outputs*l.batch * sizeof(half), cudaMemcpyDefault, get_cuda_stream());
         }
         else
         {
-            //backward_bias_gpu(l.bias_updates_gpu, l.delta_gpu, l.batch, l.n, l.out_w*l.out_h);
         }
 
-        // convert input: state.input (x), l.delta_gpu (y) from fp32 to fp16
-        // get output: l.weight_updates_gpu (dw) and convert it to fp32 (ONLY if it is fp16)
-
-        // calculate conv weight updates
-        // Already: l.weight_updates_gpu = (l.weight_updates_gpu - l.weight*decay*batch*subdivision)*momentum
-        //   so we should copy f32 to f16, or compute: f16=(w_up - w*d*b*s)*m
         assert((l.nweights) > 0);
         cuda_convert_f32_to_f16(l.weight_updates_gpu, l.nweights, l.weight_updates_gpu16);
 
@@ -763,10 +534,6 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
         if (state.delta) {
             if (l.binary || l.xnor) swap_binary(&l);
 
-            // http://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#cudnnConvolutionBackwardData
-            // calculate delta for the next layer
-            // convert input: l.weights_gpu (w), l.delta_gpu (dy) from fp32 to fp16
-            // get output: state.delta (dx) and convert it to fp32 (ONLY if it is fp16)
             CHECK_CUDNN(cudnnConvolutionBackwardData(cudnn_handle(),
                 &alpha,
                 l.weightDesc16,
@@ -788,7 +555,6 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
         }
     }
     else {
-        //#else    // CUDNN_HALF
 
         if(l.batch_normalize){
             backward_batchnorm_layer_gpu(l, state);
@@ -812,8 +578,6 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
 
         if (state.delta) {
             if (l.binary || l.xnor) swap_binary(&l);
-            // http://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#cudnnConvolutionBackwardData
-            // calculate delta for the next layer
             CHECK_CUDNN(cudnnConvolutionBackwardData(cudnn_handle(),
                 &one,
                 l.weightDesc,
@@ -833,9 +597,7 @@ void backward_convolutional_layer_gpu(convolutional_layer l, network_state state
         }
     }
 
-//#endif    // CUDNN_HALF
-
-#else    // CUDNN
+#else    // NO CUDNN
     if (l.batch_normalize) {
         backward_batchnorm_layer_gpu(l, state);
     }
