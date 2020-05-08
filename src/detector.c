@@ -208,23 +208,6 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         }
         load_thread = load_data(args);
 
-        /*
-        int k;
-        for(k = 0; k < l.max_boxes; ++k){
-        box b = float_to_box(train.y.vals[10] + 1 + k*5);
-        if(!b.x) break;
-        printf("loaded: %f %f %f %f\n", b.x, b.y, b.w, b.h);
-        }
-        image im = float_to_image(448, 448, 3, train.X.vals[10]);
-        int k;
-        for(k = 0; k < l.max_boxes; ++k){
-        box b = float_to_box(train.y.vals[10] + 1 + k*5);
-        printf("%d %d %d %d\n", truth.x, truth.y, truth.w, truth.h);
-        draw_bbox(im, b, 8, 1,0,0);
-        }
-        save_image(im, "truth11");
-        */
-
         const double load_time = (what_time_is_it_now() - time);
         printf("Loaded: %lf seconds", load_time);
         if (load_time > 0.1 && avg_loss > 0) printf(" - performance bottleneck on CPU or Disk HDD/SSD");
