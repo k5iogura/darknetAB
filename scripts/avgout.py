@@ -69,7 +69,7 @@ for i,loss in enumerate(iter2avg):
     print('')
 print("-"*107)
 sys.stdout.write("MIN {:8d} {:12.6f} ".format(minimumi,minimumj))
-for j in range(ceil(args.bars*loss/(maximumj-minimumj))):
+for j in range(ceil(args.bars*minimumj/(maximumj-minimumj))):
     if j > args.bars:break
     sys.stdout.write('>')
 print('')
