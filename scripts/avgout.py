@@ -61,6 +61,7 @@ print(fstr.format("iteration","loss","bar"))
 print("-"*(args.bars+27))
 
 maximumj = np.max(iter2avg[::Offset,1])
+maximumj = min(maximumj, args.column*minimumj)
 limit = 10
 widen = 1.0
 if maximumj<limit*minimumj:
