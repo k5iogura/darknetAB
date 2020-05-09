@@ -5,9 +5,10 @@ from pdb import set_trace
 
 args = argparse.ArgumentParser()
 args.add_argument('log', type=str)
-args.add_argument('-p', "--phrase", type=str,default="detv3", choices=["detv3","class","seg"])
-args.add_argument('-c', "--column", type=int,default=20)
-args.add_argument('-b', "--burn_in",type=int,default=1)
+args.add_argument('-p', "--phrase",   type=str,default="detv3", choices=["detv3","class","seg"])
+args.add_argument('-c', "--column",   type=int,default=20)
+args.add_argument('-b', "--burn_in",  type=int,default=1)
+args.add_argument('-s', "--stop_iter",type=int,default=1000000)
 args = args.parse_args()
 filename=args.log
 
@@ -26,6 +27,7 @@ print('phrase to search iteration and loss:',reg)
 # analyzing
 #
 iter2avg = [0]
+iters = 0
 with open(filename) as f:
     for l in f:
         w = l.strip().split()
@@ -35,6 +37,8 @@ with open(filename) as f:
 
         if m is None or len(m.groups())<2:continue
         iter2avg.append(float(m.groups()[1]))
+        if iters>args.stop_iter:break
+        iters+=1
 
 N=len(iter2avg)
 if N<args.burn_in:
@@ -65,7 +69,8 @@ for i,loss in enumerate(iter2avg):
     print('')
 print("-"*107)
 sys.stdout.write("MIN {:8d} {:12.6f} ".format(minimumi,minimumj))
-for _ in range(int(minimumj*((maximumj-minimumj)/args.column))):
+for j in range(int(minimumj*((maximumj-minimumj)/args.column))):
+    if j > 80:break
     sys.stdout.write('>')
 print('')
 print("-"*107)
