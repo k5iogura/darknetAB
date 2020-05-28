@@ -625,7 +625,7 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
     }
     time_t start = time(0);
     for (i = nthreads; i < m + nthreads; i += nthreads) {
-        fprintf(stderr, "%d\n", i);
+        fprintf(stderr, "%6d", i);
         for (t = 0; t < nthreads && i + t - nthreads < m; ++t) {
             pthread_join(thr[t], 0);
             val[t] = buf[t];
@@ -673,6 +673,7 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
             free_image(val[t]);
             free_image(val_resized[t]);
         }
+        fprintf(stderr,"\r\r\r\r\r\r");
     }
     if (fps) {
         for (j = 0; j < classes; ++j) {
