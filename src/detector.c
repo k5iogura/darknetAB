@@ -893,6 +893,23 @@ float validate_detector_map(char *datacfg, char *cfgfile, char *weightfile, floa
 
     int* truth_classes_count = (int*)xcalloc(classes, sizeof(int));
 
+    // to make results/ directory
+    FILE **fps = 0;
+    FILE *fp = 0;
+    char *outfile=NULL;
+    char buff[1024];
+    char *prefix = option_find_str(options, "results", "results");
+    outfile = "comp4_det_test_";
+    fps = (FILE**) xcalloc(classes, sizeof(FILE *));
+    for (j = 0; j < classes; ++j) {
+        snprintf(buff, 1024, "%s/%s%s.txt", prefix, outfile, names[j]);
+        fps[j] = fopen(buff, "w");
+    }
+    outfile = "coco_results";
+    snprintf(buff, 1024, "%s/%s.json", prefix, outfile);
+    fp = fopen(buff, "w");
+    fprintf(fp, "[\n");
+
     // For multi-class precision and recall computation
     float *avg_iou_per_class = (float*)xcalloc(classes, sizeof(float));
     int *tp_for_thresh_per_class = (int*)xcalloc(classes, sizeof(int));
@@ -928,6 +945,11 @@ float validate_detector_map(char *datacfg, char *cfgfile, char *weightfile, floa
             int nboxes = 0;
             float hier_thresh = 0;
             detection *dets;
+            // to make results/ directory
+            int w = val[t].w;
+            int h = val[t].h;
+            detection *detsVal = get_network_boxes(&net, w, h, thresh, .5, 0, 0, &nboxes, letter_box);
+            do_nms_sort(detsVal, nboxes, l.classes, nms);
             if (args.type == LETTERBOX_DATA) {
                 dets = get_network_boxes(&net, val[t].w, val[t].h, thresh, hier_thresh, 0, 1, &nboxes, letter_box);
             }
@@ -940,6 +962,10 @@ float validate_detector_map(char *datacfg, char *cfgfile, char *weightfile, floa
                 else diounms_sort(dets, nboxes, l.classes, nms, l.nms_kind, l.beta_nms);
             }
             //if (nms) do_nms_obj(dets, nboxes, l.classes, nms);
+
+            // to make results/ directory
+            print_cocos(fp, path, detsVal, nboxes, classes, w, h);
+            print_detector_detections(fps, id, detsVal, nboxes, classes, w, h);
 
             char labelpath[4096];
             replace_image_to_label(path, labelpath);
@@ -1049,6 +1075,9 @@ float validate_detector_map(char *datacfg, char *cfgfile, char *weightfile, floa
             //sprintf(buff, "%s\n", path);
             //if(errors_in_this_image > 0) fwrite(buff, sizeof(char), strlen(buff), reinforcement_fd);
 
+            // to make results/ directory
+            free_detections(detsVal, nboxes);
+
             free_detections(dets, nboxes);
             free(id);
             free_image(val[t]);
@@ -1056,9 +1085,18 @@ float validate_detector_map(char *datacfg, char *cfgfile, char *weightfile, floa
         }
     }
 
+    // to make results/ directory
+    if (fps) {
+        for (j = 0; j < classes; ++j) {
+            fclose(fps[j]);
+        }
+        free(fps);
+    }
+    fseek(fp, -2, SEEK_CUR);
     //for (t = 0; t < nthreads; ++t) {
     //    pthread_join(thr[t], 0);
     //}
+    fprintf(fp, "\n]\n");
 
     if ((tp_for_thresh + fp_for_thresh) > 0)
         avg_iou = avg_iou / (tp_for_thresh + fp_for_thresh);
