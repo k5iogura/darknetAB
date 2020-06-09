@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef OPENCV
+#include "image_opencv.h"
+#endif
+
 #define NUMCHARS 37
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -979,7 +983,8 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int c, int bo
     d.X.vals = (float**)xcalloc(d.X.rows, sizeof(float*));
     d.X.cols = h*w*c;
 
-    float r1 = 0, r2 = 0, r3 = 0, r4 = 0, r_scale = 0;
+    //float r1 = 0, r2 = 0, r3 = 0, r4 = 0, r_scale = 0;
+    float r1 = 0, r2 = 0, r3 = 0, r4 = 0;
     float dhue = 0, dsat = 0, dexp = 0, flip = 0, blur = 0;
     int augmentation_calculated = 0;
 
@@ -1021,7 +1026,7 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int c, int bo
                 r3 = random_float();
                 r4 = random_float();
 
-                r_scale = random_float();
+            //    r_scale = random_float();
 
                 dhue = rand_uniform_strong(-hue, hue);
                 dsat = rand_scale(saturation);
@@ -1126,7 +1131,7 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int c, int bo
                 const int bot_shift = min_val_cmp(h - cut_y[i], max_val_cmp(0, (-pbot*h / oh)));
 
 
-                int k, x, y;
+                int k, y;
                 for (k = 0; k < c; ++k) {
                     for (y = 0; y < h; ++y) {
                         int j = y*w + k*w*h;
@@ -1230,7 +1235,7 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int c, int bo
     d.X.vals = (float**)xcalloc(d.X.rows, sizeof(float*));
     d.X.cols = h*w*c;
 
-    float r1 = 0, r2 = 0, r3 = 0, r4 = 0, r_scale;
+    float r1 = 0, r2 = 0, r3 = 0, r4 = 0, r_scale = 0;
     float dhue = 0, dsat = 0, dexp = 0, flip = 0;
     int augmentation_calculated = 0;
 
