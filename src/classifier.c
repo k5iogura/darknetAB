@@ -788,7 +788,7 @@ void try_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filena
     free(indexes);
 }
 
-void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filename, int top)
+void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filename, int top, int show_img)
 {
     network net = parse_network_cfg_custom(cfgfile, 1, 0);
     if(weightfile){
@@ -853,6 +853,19 @@ void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *fi
             else printf("%s: %f\n",names[index], predictions[index]);
         }
         if(r.data != im.data) free_image(r);
+
+#ifdef OPENCV
+        // show and wait
+        if (show_img){
+            show_image(im,"demo");
+            while(1){
+                int c = wait_key_cv(100);
+                if (c == 32 || c == 1048608) break;
+                if (c == 27 || c == 1048603) exit(0);
+            }
+        }
+#endif
+
         free_image(im);
         free_image(resized);
         if (filename) break;
@@ -1349,6 +1362,7 @@ void run_classifier(int argc, char **argv)
     int benchmark_layers = find_arg(argc, argv, "-benchmark_layers");
     if (benchmark_layers) benchmark = 1;
     int dontuse_opencv = find_arg(argc, argv, "-dontuse_opencv");
+    int show_img  = find_arg(argc, argv, "-show_img");
     int show_imgs = find_arg(argc, argv, "-show_imgs");
     int calc_topk = find_arg(argc, argv, "-topk");
     int cam_index = find_int_arg(argc, argv, "-c", 0);
@@ -1360,7 +1374,7 @@ void run_classifier(int argc, char **argv)
     char *filename = (argc > 6) ? argv[6]: 0;
     char *layer_s = (argc > 7) ? argv[7]: 0;
     int layer = layer_s ? atoi(layer_s) : -1;
-    if(0==strcmp(argv[2], "predict")) predict_classifier(data, cfg, weights, filename, top);
+    if(0==strcmp(argv[2], "predict")) predict_classifier(data, cfg, weights, filename, top, show_img);
     else if(0==strcmp(argv[2], "try")) try_classifier(data, cfg, weights, filename, atoi(layer_s));
     else if(0==strcmp(argv[2], "train")) train_classifier(data, cfg, weights, gpus, ngpus, clear, dontuse_opencv, dont_show, mjpeg_port, calc_topk, show_imgs);
     else if(0==strcmp(argv[2], "demo")) demo_classifier(data, cfg, weights, cam_index, filename, benchmark, benchmark_layers);
