@@ -18,7 +18,7 @@ filename=args.log
 # append phrase for new log format
 #
 if args.phrase == "detv3":
-    reg = '([0-9]+):.* +([0-9.]+) *avg'
+    reg = '([0-9.]+):.* +([0-9.]+) *avg'
 else:
     print(args.phrase, "Not suported")
     sys.exit(-1)
@@ -29,11 +29,17 @@ print('phrase to search iteration and loss:',reg)
 #
 # analyzing
 #
+mAP50 = ""
 iter2avg = [[0,1e-10]]
 with open(filename) as f:
     for l in f:
         w = l.strip().split()
         if len(w)==0:continue
+
+        reg_map='Last accuracy mAP@0.5 = ([0-9.]+) %, best = ([0-9.]+) %'
+        n = re.search(reg_map, l.strip())
+        if n is not None and len(n.groups())==2:
+            mAP50 = n.groups()[-1]
 
         m = re.search(reg,l.strip())
 
@@ -58,7 +64,8 @@ minimumj = minimumj if minimumj > 0.0 else 1e-10
 #
 print("-"*(args.bars+27))
 fstr = "|{:>11s} {:>12s} {:^%ds}|"%(args.bars)
-print(fstr.format("iteration","loss","bar"))
+if mAP50 is not None: mAP50="({:4s}%)".format(mAP50)
+print(fstr.format("iteration","loss"+mAP50,"bar"))
 print("-"*(args.bars+27))
 
 maximumj = np.max(iter2avg[::Offset,1])
